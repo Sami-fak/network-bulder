@@ -3,10 +3,8 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output, State
 import urllib
-import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
-import plotly.express as px
 
 theme = dbc.themes.BOOTSTRAP
 css = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
