@@ -9,7 +9,7 @@ import dash_bootstrap_components as dbc
 theme = dbc.themes.BOOTSTRAP
 css = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
 app = dash.Dash(__name__, external_stylesheets=[theme, css])
-
+server = app.server
 # app layout with 2 columns, 1 for the parameters and 1 for the JSON export
 
 NB_LAYERS = 1
@@ -262,5 +262,4 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
     
 
 if __name__ == '__main__':
-    server = app.server
     server.run(debug=True)
