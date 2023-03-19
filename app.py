@@ -115,7 +115,7 @@ def update_layer_inputs(layers):
                     id='regularization_{}'.format(i),
                     options=[
                         {'label': 'None', 'value': 'None'},
-                        {'label': 'L1 Penalty', 'value': 'L1Penalty'},
+                        {'label': 'L2 Penalty', 'value': 'L2Penalty'},
                     ],
                     value='None'
                 )
