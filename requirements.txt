@@ -5,5 +5,4 @@ dash-renderer
 plotly
 pandas
 numpy
-scikit-learn
-Frozen-Flask
+gunicorn
