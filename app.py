@@ -341,7 +341,7 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
                 \"Type\": \"{}\"\n\t
             }}
         ]\n
-    }}""".format(batch_size, ',\t\t'.join(layers_list), repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1], repr(np.random.randn(1, 1) * np.sqrt(2/(1)))[6:-1], activation, optimizer_str, 'Standard')
+    }}""".format(batch_size, ',\t\t'.join(layers_list), repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1], repr(np.random.randn(n, 1) * np.sqrt(2/(1)))[6:-1], activation, optimizer_str, 'Standard')
     # random vectors above for the output layer
 
     return html.Div([
