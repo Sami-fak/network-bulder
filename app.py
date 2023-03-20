@@ -182,7 +182,6 @@ def copy_to_clipboard(json, n_clicks):
     Copy the JSON export to the clipboard
     """
     if n_clicks > 0:
-        print(json['props']['children'][4]['props']['children'])
         pyperclip.copy(json['props']['children'][4]['props']['children'])
         return dbc.Alert("JSON copied to clipboard", color="success", dismissable=True, is_open=True)
 
@@ -266,16 +265,16 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         print(f"Optimizer: {optimizer}")
         optimizer_str = ''
         if optimizer == 'Momentum':
-            optimizer_str = """{{\n\t\t\t
+            optimizer_str = """\t\t\t
                 \"LearningRate\":{},\n\t\t\t
                 \"Type\":\"{}\",\n\t\t\t
                 \"Momentum\": {}\n\t\t
-            }}""".format(learning_rate, optimizer, momentum)
+            """.format(learning_rate, optimizer, momentum)
         else:
-            optimizer_str = """{{\n\t\t\t
+            optimizer_str = """\t\t\t
                 \"LearningRate\":{},\n\t\t\t
                 \"Type\":\"{}\"\n\t\t
-            }}""".format(learning_rate, optimizer)
+            """.format(learning_rate, optimizer)
 
         print(optimizer_str)
         # if the layer has L2 regularization, add the regularization method and the penalty coefficient
