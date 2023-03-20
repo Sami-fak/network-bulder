@@ -8,3 +8,4 @@ pandas
 numpy
 gunicorn
 urllib3
+pyperclip

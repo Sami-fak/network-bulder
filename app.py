@@ -6,6 +6,7 @@ import urllib
 import numpy as np
 import dash_bootstrap_components as dbc
 import sys
+import pyperclip
 
 theme = dbc.themes.DARKLY
 css = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
@@ -170,6 +171,21 @@ def update_momentum(optimizer):
     else:
         return {'display': 'none'}
 
+# copy the JSON export to the clipboard
+@app.callback(
+    Output('alert', 'children'),
+    State('json', 'children'),
+    Input('copy-json', 'n_clicks')
+)
+def copy_to_clipboard(json, n_clicks):
+    """
+    Copy the JSON export to the clipboard
+    """
+    if n_clicks > 0:
+        print(json['props']['children'][4]['props']['children'])
+        pyperclip.copy(json['props']['children'][4]['props']['children'])
+        return dbc.Alert("JSON copied to clipboard", color="success", dismissable=True, is_open=True)
+
 
 # callback to update the JSON export
 
@@ -244,7 +260,7 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         np.set_printoptions(threshold=sys.maxsize, suppress=True)
         # initialize the weights and biases with xaiver initialization
         weights = repr(np.random.randn(input_shape, neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
-        biases = repr(np.random.randn(input_shape) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
+        biases = repr(np.random.randn(neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
         
         # if the optimizer is Momentum add a Momentum parameter in the GradientAdjustmentParameters
         print(f"Optimizer: {optimizer}")
@@ -323,6 +339,9 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
 
     return html.Div([
         html.A('Download JSON', id='download-json', download="neural_network.json", href="data:text/json;charset=utf-8,"+urllib.parse.quote(json), target="_blank"),
+        html.Br(),
+        dbc.Button('Copy Json to clipboard', id='copy-json', color="primary", className="mr-1", n_clicks=0),
+        html.Div(id='alert', children=''),
         html.Pre(json, style={'whiteSpace': 'pre-wrap'}),
     ])
     
