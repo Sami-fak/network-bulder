@@ -253,13 +253,21 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         neurons = args[i]
         if neurons == 0:
             continue
+        
+        if i == 0:
+            m = input_shape
+            n = neurons
+        else:
+            m = args[i-1]
+            n = neurons
+
         # get the regularization method for the current layer
         regularization = args[i+layers]
         # get the weights and biases for the current layer
         np.set_printoptions(threshold=sys.maxsize, suppress=True)
         # initialize the weights and biases with xaiver initialization
-        weights = repr(np.random.randn(input_shape, neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
-        biases = repr(np.random.randn(neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
+        weights = repr(np.random.randn(m, n) * np.sqrt(2.0 / (m + n)))[6:-1]
+        biases = repr(np.random.randn(n) * np.sqrt(2.0 / (m + n)))[6:-1]
         
         # if the optimizer is Momentum add a Momentum parameter in the GradientAdjustmentParameters
         print(f"Optimizer: {optimizer}")
