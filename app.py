@@ -5,22 +5,27 @@ from dash.dependencies import Input, Output, State
 import urllib
 import numpy as np
 import dash_bootstrap_components as dbc
+import sys
 
-theme = dbc.themes.BOOTSTRAP
+theme = dbc.themes.DARKLY
 css = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
 app = dash.Dash(__name__, external_stylesheets=[theme, css])
 server = app.server
 # app layout with 2 columns, 1 for the parameters and 1 for the JSON export
 
-NB_LAYERS = 1
+NB_LAYERS = 10
 NB_NEURONS = 10
-NB_REGULARIZATION = 1
+NB_REGULARIZATION = 10
 
 app.layout = html.Div([
     dbc.Row([
+        # simple header with a title 'network builder'
         dbc.Col([
-            html.H1('Neural Network'),
-            html.Hr(),
+            html.H1('Network Builder'),
+            html.Hr()
+        ], className="col-lg-12 col-md-12 col-sm-12 col-xs-12"),
+    
+        dbc.Col([
             html.H3('Parameters'),
             html.Hr(),
             html.Label('Number of Layers'),
@@ -29,8 +34,9 @@ app.layout = html.Div([
                 type='number',
                 min=1,
                 max=20,
-                value=1,
+                value=10,
                 step=1,
+                disabled=True
             ),
             # Add as many input fields as the number of layers in the network for the number of neurons in each layer and a dropdown to select the regularization method
 
@@ -81,8 +87,6 @@ app.layout = html.Div([
 
         ], className="col-lg-4 col-md-4 col-sm-4 col-xs-4"),
         dbc.Col([
-            html.H1('Neural Network'),
-            html.Hr(),
             html.H3('JSON Export'),
             html.Hr(),
             html.Div(id='json')
@@ -101,11 +105,6 @@ def update_layer_inputs(layers):
     Update the number of input fields for the number of neurons in each layer
     For each layer, add a dropdown to select the regularization method and an input field for the number of neurons
     """
-    # update NB_LAYERS and NB_REGULARIZATION
-    global NB_LAYERS
-    global NB_REGULARIZATION
-    NB_LAYERS = layers
-    NB_REGULARIZATION = layers
     return [html.Div([
         html.Label('Layer {}'.format(i+1)),
         dbc.Row([
@@ -125,8 +124,8 @@ def update_layer_inputs(layers):
                 dbc.Input(
                     id='neurons_{}'.format(i),
                     type='number',
-                    value=10,
-                    min=1,
+                    value=0,
+                    min=0,
                     max=100,
                     step=1
                 )
@@ -193,15 +192,18 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
     """
     if n_clicks==0:
         return 'No JSON to display'
-    print("Exportation of the neural network parameters")
-    # create a list of dictionaries for each layer
+    print(f"Args: {args}")
     layers_list = []
     for i in range(layers):
         # get the number of neurons in the current layer
         neurons = args[i]
+        if neurons == 0:
+            print('No Neurons in Layer')
+            continue
         # get the regularization method for the current layer
         regularization = args[i+layers]
         # get the weights and biases for the current layer
+        np.set_printoptions(threshold=sys.maxsize, suppress=True)
         weights = repr(np.random.randn(neurons, neurons-1) * np.sqrt(2/(neurons-1)))[6:-1]
         biases = repr(np.random.randn(neurons) * np.sqrt(2/(neurons-1)))[6:-1]
         # create a dictionary for the current layer
@@ -256,8 +258,8 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         ]\n
     }}""".format(batch_size, ',\n\t\t'.join(layers_list))
     return html.Div([
+        html.A('Download JSON', id='download-json', download="neural_network.json", href="data:text/json;charset=utf-8,"+urllib.parse.quote(json), target="_blank"),
         html.Pre(json, style={'whiteSpace': 'pre-wrap'}),
-        html.A('Download JSON', id='download-json', download="neural_network.json", href="data:text/json;charset=utf-8,"+urllib.parse.quote(json), target="_blank")
     ])
     
 
