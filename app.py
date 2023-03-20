@@ -53,16 +53,15 @@ app.layout = html.Div([
             ),
 
             html.Label('Activation Function'),
-            dcc.Dropdown(
+            dbc.Select(
                 id='activation',
                 options=[
-                    
                     {'label': 'Leaky ReLU', 'value': 'LeakyReLU'},
                 ],
                 value='LeakyReLU'
             ),
             html.Label('Optimizer'),
-            dcc.Dropdown(
+            dbc.Select(
                 id='optimizer',
                 options=[
                     {'label': 'Fixed Leaning Rate', 'value': 'FixedLearningRate'},
@@ -71,6 +70,19 @@ app.layout = html.Div([
                 ],
                 value='Momentum'
             ),
+
+            # if momentum is selected as optimizer, add an input field for the momentum
+            html.Label('Momentum'),
+            dbc.Input(
+                id='momentum',
+                type='number',
+                value=0.9,
+                min=0,
+                max=1,
+                step=0.01,
+                style={'display': 'none'}
+            ),
+
             html.Label('Learning Rate'),
             # input field for the learning rate
             dbc.Input(
@@ -119,7 +131,7 @@ def update_layer_inputs(layers):
         dbc.Row([
             dbc.Col([
                 html.Label('Regularization'),
-                dcc.Dropdown(
+                dbc.Select(
                     id='regularization_{}'.format(i),
                     options=[
                         {'label': 'None', 'value': 'None'},
@@ -143,6 +155,22 @@ def update_layer_inputs(layers):
     ], style={'marginBottom': 20, 'marginTop': 20}, key='layer_{}'.format(i+1)) for i in range(layers)]
 
 
+# callback to update the momentum input field
+@app.callback(
+    Output('momentum', 'style'),
+    Input('optimizer', 'value')
+)
+def update_momentum(optimizer):
+    """
+    Update the momentum input field
+    If the optimizer is momentum, show the input field, otherwise hide it
+    """
+    if optimizer == 'Momentum':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
+
 # callback to update the JSON export
 
 @app.callback(
@@ -154,10 +182,11 @@ def update_layer_inputs(layers):
     State('learning_rate', 'value'),
     State('batch_size', 'value'),
     State('input_shape', 'value'),
+    State('momentum', 'value'),
     *[State('neurons_{}'.format(i), 'value') for i in range(NB_LAYERS)],
     *[State('regularization_{}'.format(i), 'value') for i in range(NB_REGULARIZATION)]
 )
-def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, *args):
+def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, momentum, *args):
     """
     Create a JSON export of the neural network parameters
     The format is as follows:
@@ -214,10 +243,25 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         # get the weights and biases for the current layer
         np.set_printoptions(threshold=sys.maxsize, suppress=True)
         # initialize the weights and biases with xaiver initialization
-        weights = repr(np.random.randn(neurons, input_shape) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
-        biases = repr(np.random.randn(neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
+        weights = repr(np.random.randn(input_shape, neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
+        biases = repr(np.random.randn(input_shape) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
         
-        # create a dictionary for the current layer
+        # if the optimizer is Momentum add a Momentum parameter in the GradientAdjustmentParameters
+        print(f"Optimizer: {optimizer}")
+        optimizer_str = ''
+        if optimizer == 'Momentum':
+            optimizer_str = """{{\n\t\t\t
+                \"LearningRate\":{},\n\t\t\t
+                \"Type\":\"{}\",\n\t\t\t
+                \"Momentum\": {}\n\t\t
+            }}""".format(learning_rate, optimizer, momentum)
+        else:
+            optimizer_str = """{{\n\t\t\t
+                \"LearningRate\":{},\n\t\t\t
+                \"Type\":\"{}\"\n\t\t
+            }}""".format(learning_rate, optimizer)
+
+        print(optimizer_str)
         # if the layer has L2 regularization, add the regularization method and the penalty coefficient
         if regularization == 'L2Penalty':
             layer = """{{\n\t
@@ -226,14 +270,13 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
                     \"Weights\": {},\n\t\t
                     \"ActivatorType\": \"{}\",\n\t\t
                     \"GradientAdjustmentParameters\": {{\n\t\t\t
-                        \"LearningRate\":{},\n\t\t\t
-                        \"Type\":\"{}\"\n\t\t
+                        {}
                     }},\n\t\t
                     \"Type\": \"{}\"\n\t
                 }},\n\t
                 \"Type\": \"{}\",\n\t
                 \"PenaltyCoefficient\": {}\n
-            }}""".format(biases, weights, activation, learning_rate, optimizer, 'Standard', regularization, 0.001)
+            }}""".format(biases, weights, activation, optimizer_str, 'Standard', regularization, 0.001)
         else:
             #{
         #     "Bias": [ 0.9798584611488593 ],
@@ -253,11 +296,10 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
                 \"Weights\": {},\n\t
                 \"ActivatorType\": \"{}\",\n\t
                 \"GradientAdjustmentParameters\": {{\n\t\t
-                    \"LearningRate\":{},\n\t\t
-                    \"Type\":\"{}\"\n\t
+                    {}
                 }},\n\t
                 \"Type\": \"{}\"\n
-            }}""".format(biases, weights, activation, learning_rate, optimizer, 'Standard')
+            }}""".format(biases, weights, activation, optimizer_str, 'Standard')
             
         # add the dictionary to the list of layers
         layers_list.append(layer)
@@ -271,13 +313,12 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
                 \"Weights\": {},\n\t\t
                 \"ActivatorType\": \"{}\",\n\t\t
                 \"GradientAdjustmentParameters\": {{\n\t\t\t
-                    \"LearningRate\":{},\n\t\t\t
-                    \"Type\":\"{}\"\n\t\t
+                    {}
                 }},\n\t\t
                 \"Type\": \"{}\"\n\t
             }}
         ]\n
-    }}""".format(batch_size, ',\t\t'.join(layers_list), repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1], repr(np.random.randn(1, 1) * np.sqrt(2/(1)))[6:-1], activation, learning_rate, optimizer, 'Standard')
+    }}""".format(batch_size, ',\t\t'.join(layers_list), repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1], repr(np.random.randn(1, 1) * np.sqrt(2/(1)))[6:-1], activation, optimizer_str, 'Standard')
     # random vectors above for the output layer
 
     return html.Div([
