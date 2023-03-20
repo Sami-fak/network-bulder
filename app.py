@@ -42,6 +42,15 @@ app.layout = html.Div([
 
             html.Div(id='layer_inputs'),
 
+            html.Label('Input Shape'),
+            dbc.Input(
+                id='input_shape', 
+                type='number',
+                min=1,
+                max=100,
+                step=1,
+                value=7
+            ),
 
             html.Label('Activation Function'),
             dcc.Dropdown(
@@ -144,10 +153,11 @@ def update_layer_inputs(layers):
     State('optimizer', 'value'),
     State('learning_rate', 'value'),
     State('batch_size', 'value'),
+    State('input_shape', 'value'),
     *[State('neurons_{}'.format(i), 'value') for i in range(NB_LAYERS)],
     *[State('regularization_{}'.format(i), 'value') for i in range(NB_REGULARIZATION)]
 )
-def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, *args):
+def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, *args):
     """
     Create a JSON export of the neural network parameters
     The format is as follows:
@@ -198,14 +208,15 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         # get the number of neurons in the current layer
         neurons = args[i]
         if neurons == 0:
-            print('No Neurons in Layer')
             continue
         # get the regularization method for the current layer
         regularization = args[i+layers]
         # get the weights and biases for the current layer
         np.set_printoptions(threshold=sys.maxsize, suppress=True)
-        weights = repr(np.random.randn(neurons, neurons-1) * np.sqrt(2/(neurons-1)))[6:-1]
-        biases = repr(np.random.randn(neurons) * np.sqrt(2/(neurons-1)))[6:-1]
+        # initialize the weights and biases with xaiver initialization
+        weights = repr(np.random.randn(neurons, input_shape) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
+        biases = repr(np.random.randn(neurons) * np.sqrt(2.0 / (neurons + input_shape)))[6:-1]
+        
         # create a dictionary for the current layer
         # if the layer has L2 regularization, add the regularization method and the penalty coefficient
         if regularization == 'L2Penalty':
@@ -250,13 +261,25 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
             
         # add the dictionary to the list of layers
         layers_list.append(layer)
-    # create the JSON export
+    # create the JSON export with the layer output at the end
     json = """{{\n\t
         \"BatchSize\": {},\n\t
         \"SerializedLayers\": [\n\t\t
             {}\n\t
+            {{\n\t\t
+                \"Bias\": {},\n\t\t
+                \"Weights\": {},\n\t\t
+                \"ActivatorType\": \"{}\",\n\t\t
+                \"GradientAdjustmentParameters\": {{\n\t\t\t
+                    \"LearningRate\":{},\n\t\t\t
+                    \"Type\":\"{}\"\n\t\t
+                }},\n\t\t
+                \"Type\": \"{}\"\n\t
+            }}
         ]\n
-    }}""".format(batch_size, ',\n\t\t'.join(layers_list))
+    }}""".format(batch_size, ',\t\t'.join(layers_list), repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1], repr(np.random.randn(1, 1) * np.sqrt(2/(1)))[6:-1], activation, learning_rate, optimizer, 'Standard')
+    # random vectors above for the output layer
+
     return html.Div([
         html.A('Download JSON', id='download-json', download="neural_network.json", href="data:text/json;charset=utf-8,"+urllib.parse.quote(json), target="_blank"),
         html.Pre(json, style={'whiteSpace': 'pre-wrap'}),
