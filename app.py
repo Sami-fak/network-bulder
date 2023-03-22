@@ -48,7 +48,7 @@ app.layout = html.Div([
                 id='input_shape', 
                 type='number',
                 min=1,
-                max=100,
+                max=500,
                 step=1,
                 value=7
             ),
@@ -58,6 +58,9 @@ app.layout = html.Div([
                 id='activation',
                 options=[
                     {'label': 'Leaky ReLU', 'value': 'LeakyReLU'},
+                    {'label': 'ReLU', 'value': 'ReLU'},
+                    {'label': 'Sigmoid', 'value': 'Sigmoid'},
+                    {'label': 'Tanh', 'value': 'Tanh'},
                 ],
                 value='LeakyReLU'
             ),
@@ -111,7 +114,8 @@ app.layout = html.Div([
         dbc.Col([
             html.H3('JSON Export'),
             html.Hr(),
-            html.Div(id='json')
+            html.Div(id='json-content', children=''),
+            html.Div(id='json', children=''),
         ], className="col-lg-8 col-md-8 col-sm-8 col-xs-8")
     ], className="col-lg-12 col-md-12 col-sm-12 col-xs-12")
 ], className='container')
@@ -170,21 +174,6 @@ def update_momentum(optimizer):
         return {'display': 'block'}
     else:
         return {'display': 'none'}
-
-# copy the JSON export to the clipboard
-@app.callback(
-    Output('alert', 'children'),
-    State('json', 'children'),
-    Input('copy-json', 'n_clicks')
-)
-def copy_to_clipboard(json, n_clicks):
-    """
-    Copy the JSON export to the clipboard
-    """
-    if n_clicks > 0:
-        pyperclip.copy(json['props']['children'][4]['props']['children'])
-        return dbc.Alert("JSON copied to clipboard", color="success", dismissable=True, is_open=True)
-
 
 # callback to update the JSON export
 
@@ -330,7 +319,7 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
     json = """{{\n\t
         \"BatchSize\": {},\n\t
         \"SerializedLayers\": [\n\t\t
-            {}\n\t
+            {},\n\t
             {{\n\t\t
                 \"Bias\": {},\n\t\t
                 \"Weights\": {},\n\t\t
@@ -347,9 +336,7 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
     return html.Div([
         html.A('Download JSON', id='download-json', download="neural_network.json", href="data:text/json;charset=utf-8,"+urllib.parse.quote(json), target="_blank"),
         html.Br(),
-        dbc.Button('Copy Json to clipboard', id='copy-json', color="primary", className="mr-1", n_clicks=0),
-        html.Div(id='alert', children=''),
-        html.Pre(json, style={'whiteSpace': 'pre-wrap'}),
+        dbc.Textarea(value=json, style={'width': '100%', 'height': 500})
     ])
     
 
