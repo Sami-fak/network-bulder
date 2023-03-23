@@ -34,7 +34,6 @@ app.layout = html.Div([
                 id='layers',
                 type='number',
                 min=1,
-                max=20,
                 value=10,
                 step=1,
                 disabled=True
@@ -102,7 +101,6 @@ app.layout = html.Div([
                 id='batch_size',
                 type='number',
                 min=1,
-                max=100,
                 step=1,
                 value=32
             ),
@@ -161,7 +159,6 @@ def update_layer_inputs(layers):
                     type='number',
                     value=0,
                     min=0,
-                    max=100,
                     step=1
                 )
             ], className="col-lg-6 col-md-6 col-sm-6 col-xs-6")
