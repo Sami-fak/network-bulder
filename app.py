@@ -113,6 +113,15 @@ app.layout = html.Div([
                 ],
                 value='Zeros'
             ),
+            html.Label('Weight Initialisation'), 
+            dbc.Select(
+                id='weight_init',
+                options=[
+                    {'label': 'Uniform', 'value': 'Uniform'},
+                    {'label': 'Normal', 'value': 'Normal'},
+                ],
+                value='Uniform'
+            ),
 
             # button to export the JSON with n_clicks=0
             html.Button('Export', id='export', n_clicks=0, style={'marginTop': 20, 'marginBottom': 20})
@@ -194,10 +203,11 @@ def update_momentum(optimizer):
     State('input_shape', 'value'),
     State('momentum', 'value'),
     State('bias_init', 'value'),
+    State('weight_init', 'value'),
     *[State('neurons_{}'.format(i), 'value') for i in range(NB_LAYERS)],
     *[State('regularization_{}'.format(i), 'value') for i in range(NB_REGULARIZATION)]
 )
-def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, momentum, bias_init, *args):
+def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, momentum, bias_init, weight_init, *args):
     """
     Create a JSON export of the neural network parameters
     The format is as follows:
@@ -264,7 +274,12 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         # get the weights and biases for the current layer
         np.set_printoptions(threshold=sys.maxsize, suppress=True)
         # initialize the weights and biases with xaiver initialization
-        weights = repr(np.random.randn(m, n) * np.sqrt(2.0 / (m + n)))[6:-1]
+        if weight_init == "normal":
+            weights = repr(np.random.randn(m, n) * np.sqrt(2.0 / (m + n)))[6:-1]
+        else:
+            #xavier
+            coef=np.sqrt(6)/np.sqrt(m+n)
+            weights = repr(np.random.uniform(-coef, coef, size=(m, n)))[6:-1]
         # biases = repr(np.random.randn(n) * np.sqrt(2.0 / (m + n)))[6:-1]
         #  set biases to zeros
         
