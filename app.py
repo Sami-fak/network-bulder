@@ -256,7 +256,9 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         np.set_printoptions(threshold=sys.maxsize, suppress=True)
         # initialize the weights and biases with xaiver initialization
         weights = repr(np.random.randn(m, n) * np.sqrt(2.0 / (m + n)))[6:-1]
-        biases = repr(np.random.randn(n) * np.sqrt(2.0 / (m + n)))[6:-1]
+        # biases = repr(np.random.randn(n) * np.sqrt(2.0 / (m + n)))[6:-1]
+        #  set biases to zeros
+        biases = np.zeros((m, n))
         
         # if the optimizer is Momentum add a Momentum parameter in the GradientAdjustmentParameters
         print(f"Optimizer: {optimizer}")
