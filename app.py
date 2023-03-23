@@ -106,6 +106,15 @@ app.layout = html.Div([
                 step=1,
                 value=32
             ),
+            html.Label('Bias Initialisation'), 
+            dbc.Select(
+                id='bias_init',
+                options=[
+                    {'label': 'Zeros', 'value': 'Zeros'},
+                    {'label': 'Normale', 'value': 'Normale'},
+                ],
+                value='Zeros'
+            ),
 
             # button to export the JSON with n_clicks=0
             html.Button('Export', id='export', n_clicks=0, style={'marginTop': 20, 'marginBottom': 20})
@@ -187,10 +196,11 @@ def update_momentum(optimizer):
     State('batch_size', 'value'),
     State('input_shape', 'value'),
     State('momentum', 'value'),
+    State('bias_init', 'value'),
     *[State('neurons_{}'.format(i), 'value') for i in range(NB_LAYERS)],
     *[State('regularization_{}'.format(i), 'value') for i in range(NB_REGULARIZATION)]
 )
-def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, momentum, *args):
+def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_size, input_shape, momentum, bias_init, *args):
     """
     Create a JSON export of the neural network parameters
     The format is as follows:
@@ -237,6 +247,8 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         return 'No JSON to display'
     print(f"Args: {args}")
     layers_list = []
+    optimizer_str = ''
+    zero = 1e-8
     for i in range(layers):
         # get the number of neurons in the current layer
         neurons = args[i]
@@ -258,7 +270,11 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
         weights = repr(np.random.randn(m, n) * np.sqrt(2.0 / (m + n)))[6:-1]
         # biases = repr(np.random.randn(n) * np.sqrt(2.0 / (m + n)))[6:-1]
         #  set biases to zeros
-        biases = np.zeros((m, n))
+        
+        if bias_init == "Zeros":
+            biases = repr(np.random.randn(n) * 0 + zero)[6:-1]
+        else:
+            biases = repr(np.random.randn(n) * np.sqrt(2.0 / (m + n)))[6:-1]
         
         # if the optimizer is Momentum add a Momentum parameter in the GradientAdjustmentParameters
         print(f"Optimizer: {optimizer}")
@@ -317,6 +333,12 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
             
         # add the dictionary to the list of layers
         layers_list.append(layer)
+
+    # bias for final output
+    if bias_init=="Zeros":
+        bias_out = repr(zero*np.ones(1))[6:-1]
+    else:
+        bias_out = repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1]
     # create the JSON export with the layer output at the end
     json = """{{\n\t
         \"BatchSize\": {},\n\t
@@ -332,7 +354,7 @@ def update_json(n_clicks, layers, activation, optimizer, learning_rate, batch_si
                 \"Type\": \"{}\"\n\t
             }}
         ]\n
-    }}""".format(batch_size, ',\t\t'.join(layers_list), repr(np.random.randn(1) * np.sqrt(2/(1)))[6:-1], repr(np.random.randn(n, 1) * np.sqrt(2/(1)))[6:-1], activation, optimizer_str, 'Standard')
+    }}""".format(batch_size, ',\t\t'.join(layers_list), bias_out, repr(np.random.randn(n, 1) * np.sqrt(2/(1)))[6:-1], activation, optimizer_str, 'Standard')
     # random vectors above for the output layer
 
     return html.Div([
